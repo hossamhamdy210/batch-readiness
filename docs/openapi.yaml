@@ -1,0 +1,65 @@
+openapi: 3.0.3
+info:
+  title: Batch Readiness integration API
+  version: 2.0.0
+  description: |
+    Machine interface for ERP/SAP and scripts. Authenticate with an API key created in Admin > Integrations:
+    `Authorization: Bearer brk_...`. A *writer* key may load data; a *reader* key may only read.
+    Every load REPLACES the data of its table (per site for stock and bio). Safety guards: an empty file or a file with
+    too many unusable rows is rejected and the existing data stays; use `dryRun=true` to preview.
+servers: [{ url: http://localhost:8080 }]
+security: [{ apiKey: [] }]
+paths:
+  /integration/v1/stock:
+    put:
+      summary: Replace ERP stock (per site)
+      parameters:
+        - { name: site, in: query, schema: { type: string }, description: "Site id. Optional when every row has a plant/site column." }
+        - { name: dryRun, in: query, schema: { type: boolean } }
+        - { name: allowEmpty, in: query, schema: { type: boolean }, description: "Allow an empty file to clear the site." }
+      requestBody: { $ref: '#/components/requestBodies/Rows' }
+      responses: { '200': { $ref: '#/components/responses/Imported' }, '401': { description: Invalid key }, '403': { description: Read-only key }, '422': { $ref: '#/components/responses/Rejected' } }
+  /integration/v1/documents:
+    put: { summary: Replace controlled documents, requestBody: { $ref: '#/components/requestBodies/Rows' }, responses: { '200': { $ref: '#/components/responses/Imported' }, '422': { $ref: '#/components/responses/Rejected' } } }
+  /integration/v1/equipment:
+    put: { summary: Replace equipment status, requestBody: { $ref: '#/components/requestBodies/Rows' }, responses: { '200': { $ref: '#/components/responses/Imported' }, '422': { $ref: '#/components/responses/Rejected' } } }
+  /integration/v1/bio:
+    put:
+      summary: Replace biological inventory (per site)
+      parameters: [{ name: site, in: query, schema: { type: string } }]
+      requestBody: { $ref: '#/components/requestBodies/Rows' }
+      responses: { '200': { $ref: '#/components/responses/Imported' }, '422': { $ref: '#/components/responses/Rejected' } }
+  /integration/v1/master/{table}:
+    put:
+      summary: Load master data (Products, Requirements, Recipes, StorageTypes, Holds)
+      parameters: [{ name: table, in: path, required: true, schema: { type: string, enum: [Products, Requirements, Recipes, StorageTypes, Holds] } }]
+      requestBody: { content: { application/json: { schema: { type: array, items: { type: object } } } } }
+      responses: { '200': { description: Loaded }, '422': { description: Rejected } }
+  /integration/v1/readiness:
+    get:
+      summary: Calculate readiness
+      parameters:
+        - { name: product, in: query, required: true, schema: { type: string } }
+        - { name: site, in: query, required: true, schema: { type: string } }
+        - { name: batches, in: query, schema: { type: integer } }
+        - { name: from, in: query, required: true, schema: { type: string, format: date }, description: Earliest start date }
+        - { name: to, in: query, schema: { type: string, format: date }, description: Latest start date (default = from) }
+        - { name: step, in: query, schema: { type: string }, description: Process step or All }
+      responses: { '200': { description: Result }, '422': { description: Invalid request } }
+  /integration/v1/runs:
+    get: { summary: Recent integration runs, responses: { '200': { description: List } } }
+  /healthz:
+    get: { summary: Liveness, security: [], responses: { '200': { description: ok } } }
+  /readyz:
+    get: { summary: Readiness (database reachable), security: [], responses: { '200': { description: ok }, '503': { description: not ready } } }
+components:
+  securitySchemes:
+    apiKey: { type: http, scheme: bearer }
+  requestBodies:
+    Rows:
+      content:
+        application/json: { schema: { oneOf: [ { type: array, items: { type: object } }, { type: object, properties: { rows: { type: array, items: { type: object } } } } ] } }
+        text/csv: { schema: { type: string }, description: "Header row required; delimiter ; , tab or | is detected. SAP technical field names (MATNR, CHARG, MENGE ...) are recognised." }
+  responses:
+    Imported: { description: Loaded, content: { application/json: { schema: { type: object, properties: { ok: { type: boolean }, imported: { type: array }, skipped: { type: integer }, warnings: { type: array, items: { type: string } }, unmapped: { type: array, items: { type: string } } } } } } }
+    Rejected: { description: Nothing changed, content: { application/json: { schema: { type: object, properties: { ok: { type: boolean }, error: { type: string } } } } } }

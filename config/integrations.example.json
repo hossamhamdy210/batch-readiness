@@ -1,0 +1,21 @@
+{
+  "sapOData": [
+    {
+      "name": "stock-main-plant",
+      "enabled": false,
+      "baseUrl": "https://YOUR-SAP-HOST/sap/opu/odata/sap/API_MATERIAL_STOCK_SRV",
+      "entity": "A_MatlStkInAcctMod",
+      "auth": { "type": "basic", "userEnv": "SAP_USER", "passwordEnv": "SAP_PASSWORD" },
+      "plants": { "1000": "SITE-A" },
+      "storageLocations": [],
+      "fieldMap": {},
+      "includeSpecialStock": false,
+      "everyMinutes": 60,
+      "pageSize": 1000,
+      "maxSkippedShare": 0.2
+    }
+  ],
+  "fileDrop": [
+    { "name": "erp-exports", "dir": "./data/inbox", "everySeconds": 60 }
+  ]
+}

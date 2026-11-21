@@ -1,0 +1,19 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    ports: ["8080:8080"]
+    environment:
+      APP_TIMEZONE: ${APP_TIMEZONE:-UTC}
+      TRUST_PROXY: ${TRUST_PROXY:-}
+      # optional: create the first administrator automatically (otherwise register with the setup code printed in the log)
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      # SAP credentials for the OData connector (names are referenced from config/integrations.json)
+      SAP_USER: ${SAP_USER:-}
+      SAP_PASSWORD: ${SAP_PASSWORD:-}
+    volumes:
+      - app-data:/data
+      # - ./config/integrations.json:/app/config/integrations.json:ro
+volumes:
+  app-data:

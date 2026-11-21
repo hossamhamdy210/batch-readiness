@@ -1,0 +1,8 @@
+node_modules/
+data/
+*.db
+*.db-wal
+*.db-shm
+.env
+config/integrations.json
+fail-*.png

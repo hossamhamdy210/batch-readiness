@@ -1,0 +1,25 @@
+{
+  "name": "batch-readiness",
+  "version": "2.0.0",
+  "private": true,
+  "description": "GMP batch-readiness decision support: can this campaign start on this date? Web service with REST API and SAP-ready integrations.",
+  "license": "MIT",
+  "main": "server/index.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "setup-code": "node scripts/setup-code.js",
+    "backup": "node scripts/backup.js",
+    "wipe": "node scripts/wipe.js",
+    "seed-demo": "node scripts/seed-demo.js",
+    "test": "node --test \"tests/**/*.test.js\"",
+    "test:ui": "node tests/ui/ui.e2e.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.7.0",
+    "express": "^4.21.2",
+    "xlsx": "^0.18.5"
+  }
+}
